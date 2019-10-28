@@ -42,10 +42,12 @@
 #ifdef __CUDACC__
 #include <curand.h>
 #include <curand_kernel.h>
-#include <experimental/filesystem>
+//#include <experimental/filesystem>
 #else
-#include <experimental/filesystem>
+//#include <experimental/filesystem>
 #endif
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #if USE_MPI
 #include <mpi.h>
@@ -130,7 +132,7 @@ int main(int argc, char **argv, char **envp) {
     checkFlags(cfg);
 #endif
   }
-
+/*
 // show memory usage of GPU
 #if __CUDACC__
   namespace fsn = std::experimental::filesystem;
@@ -150,7 +152,7 @@ print_gpu_memory_usage(world_rank);
       std::cout << " Successfully Created " << std::endl;
     }
   }
-
+*/
   // Background species info
   float background_Z = 0.0, background_amu = 0.0;
   if (world_rank == 0) {
@@ -547,6 +549,7 @@ print_gpu_memory_usage(world_rank);
   std::cout << "allocating closGeomGrids finished" << std::endl;
 
 #if GEOM_HASH == 1
+std::cout << "GEOM_HASH 1 \n";
   sim::Array<float> hashX0(nHashes, 0.0), hashX1(nHashes, 0.0),
       hashY0(nHashes, 0.0), hashY1(nHashes, 0.0), hashZ0(nHashes, 0.0),
       hashZ1(nHashes, 0.0);
@@ -759,7 +762,7 @@ print_gpu_memory_usage(world_rank);
   fsec0 fs0 = finish_clock0 - start_clock0;
   printf("Time taken          is %6.3f (secs) \n", fs0.count());
   if (world_rank == 0) {
-    for (int i = 0; i < nHashes; i++) {
+   for (int i = 0; i < nHashes; i++) {
       NcFile ncFile_hash("output/geomHash" + std::to_string(i) + ".nc",
                          NcFile::replace);
       NcDim hashNR = ncFile_hash.addDim("nR", nR_closeGeom[i]);

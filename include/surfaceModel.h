@@ -14,8 +14,8 @@
 #include "Surfaces.h"
 #include <cmath>
 #include "boris.h"
-
 #ifdef __CUDACC__
+#include "cuda_runtime_api.h"
 #include <thrust/random.h>
 #else
 #include <random>
@@ -48,7 +48,7 @@ void getBoundaryNormal(Boundary* boundaryVector,int wallIndex,float surfaceNorma
                     surfaceNormalVector[0] = 1.0f;
                     surfaceNormalVector[1] = 0.0f;
                     surfaceNormalVector[2] = -1.0f / (boundaryVector[wallIndex].slope_dzdx);
-            norm_normal = std::sqrt(surfaceNormalVector[2]*surfaceNormalVector[2] + 1.0); 
+            norm_normal = sqrt(surfaceNormalVector[2]*surfaceNormalVector[2] + 1.0); 
             surfaceNormalVector[0] = surfaceNormalVector[0]/norm_normal;
             surfaceNormalVector[1] = surfaceNormalVector[1]/norm_normal;
             
@@ -82,7 +82,7 @@ double stoppingPower (Particles * particles,int indx, double Mtarget, double Zta
 
 	E0 = 0.5*particles->amu[indx]*1.6737236e-27*(particles->vx[indx]*particles->vx[indx] + particles->vy[indx]*particles->vy[indx]+ particles->vz[indx]*particles->vz[indx])/Q;
 	reducedEnergy = E0*(Mtarget/(particles->amu[indx]+Mtarget))*(screenLength/(particles->Z[indx]*Ztarget*ke2));
-	stoppingPower = 0.5*std::log(1.0 + 1.2288*reducedEnergy)/(reducedEnergy + 0.1728*std::sqrt(reducedEnergy) + 0.008*std::pow(reducedEnergy, 0.1504));
+	stoppingPower = 0.5*std::log(1.0 + 1.2288*reducedEnergy)/(reducedEnergy + 0.1728*sqrt(reducedEnergy) + 0.008*std::pow(reducedEnergy, 0.1504));
 
 	return stoppingPower;	
 }
@@ -283,7 +283,7 @@ void operator()(std::size_t indx) const {
       particleTrackVector[0] = vx;
       particleTrackVector[1] = vy;
       particleTrackVector[2] = vz;
-      norm_part = std::sqrt(particleTrackVector[0] * particleTrackVector[0] + particleTrackVector[1] * particleTrackVector[1] + particleTrackVector[2] * particleTrackVector[2]);
+      norm_part = sqrt(particleTrackVector[0] * particleTrackVector[0] + particleTrackVector[1] * particleTrackVector[1] + particleTrackVector[2] * particleTrackVector[2]);
       E0 = 0.5 * particles->amu[indx] * 1.6737236e-27 * (norm_part * norm_part) / 1.60217662e-19;
       if (E0 > 1000.0)
         E0 = 990.0;
@@ -304,7 +304,7 @@ void operator()(std::size_t indx) const {
       thetaImpact = thetaImpact * 180.0 / 3.14159265359;
       if (thetaImpact < 0.0)
         thetaImpact = 0.0;
-      signPartDotNormal = std::copysign(1.0,partDotNormal);
+      signPartDotNormal = copysign(1.0,partDotNormal);
       if (E0 == 0.0) {
         thetaImpact = 0.0;
       }
@@ -529,13 +529,13 @@ void operator()(std::size_t indx) const {
         particles->weight[indx] = newWeight;
         particles->hitWall[indx] = 0.0;
         particles->charge[indx] = 0.0;
-        float V0 = std::sqrt(2 * eInterpVal * 1.602e-19 / (particles->amu[indx] * 1.66e-27));
+        float V0 = sqrt(2 * eInterpVal * 1.602e-19 / (particles->amu[indx] * 1.66e-27));
         particles->newVelocity[indx] = V0;
         vSampled[0] = V0 * std::sin(aInterpVal * 3.1415 / 180) * std::cos(2.0 * 3.1415 * r10);
         vSampled[1] = V0 * std::sin(aInterpVal * 3.1415 / 180) * std::sin(2.0 * 3.1415 * r10);
         vSampled[2] = V0 * std::cos(aInterpVal * 3.1415 / 180);
         boundaryVector[wallHit].transformToSurface(vSampled, particles->y[indx], particles->x[indx]);
-        //float rr = std::sqrt(particles->x[indx]*particles->x[indx] + particles->y[indx]*particles->y[indx]);
+        //float rr = sqrt(particles->x[indx]*particles->x[indx] + particles->y[indx]*particles->y[indx]);
         //if (particles->z[indx] < -4.1 && -signPartDotNormal*vSampled[0] > 0.0)
         //{
         //  std::cout << "particle index " << indx  << std::endl;

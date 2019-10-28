@@ -55,7 +55,7 @@ class Boundary
     #ifdef __CUDACC__
     //curandState streams[7];
     #else
-    //std::mt19937 streams[7];
+    //mt19937 streams[7];
     #endif
 	
     float hitWall;
@@ -78,22 +78,22 @@ class Boundary
     void getSurfaceParallel(float A[],float y,float x)
     {
 #if USE3DTETGEOM > 0
-    float norm = std::sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1) + (z2 - z1) * (z2 - z1));
+    float norm = sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1) + (z2 - z1) * (z2 - z1));
     A[1] = (y2 - y1) / norm;
 #else
-    float norm = std::sqrt((x2 - x1) * (x2 - x1) + (z2 - z1) * (z2 - z1));
+    float norm = sqrt((x2 - x1) * (x2 - x1) + (z2 - z1) * (z2 - z1));
     A[1] = 0.0;
 #endif
-        //std::cout << "surf par calc " << x2 << " " << x1 << " " << norm << std::endl;
+        //cout << "surf par calc " << x2 << " " << x1 << " " << norm << endl;
         A[0] = (x2-x1)/norm;
         A[2] = (z2-z1)/norm;
 #if USE3DTETGEOM > 0
 #else
 #if USECYLSYMM > 0
-    float theta = std::atan2(y, x);
+    float theta = atan2(y, x);
     float B[3] = {0.0f};
-    B[0] = std::cos(theta) * A[0] - std::sin(theta) * A[1];
-    B[1] = std::sin(theta) * A[0] + std::cos(theta) * A[1];
+    B[0] = cos(theta) * A[0] - sin(theta) * A[1];
+    B[1] = sin(theta) * A[0] + cos(theta) * A[1];
     A[0] = B[0];
     A[1] = B[1];
 #endif
@@ -111,15 +111,15 @@ class Boundary
     if (slope_dzdx == 0.0) {
       perpSlope = 1.0e12;
     } else {
-      perpSlope = -std::copysign(1.0, slope_dzdx) / std::abs(slope_dzdx);
+      perpSlope = -copysign(1.0, slope_dzdx) / abs(slope_dzdx);
     }
-    float Br = 1.0f / std::sqrt(perpSlope * perpSlope + 1.0);
+    float Br = 1.0f / sqrt(perpSlope * perpSlope + 1.0);
     float Bt = 0.0;
-    B[2] = std::copysign(1.0,perpSlope) * std::sqrt(1 - Br * Br);
+    B[2] = copysign(1.0,perpSlope) * sqrt(1 - Br * Br);
 #if USECYLSYMM > 0
-    float theta = std::atan2(y, x);
-    B[0] = std::cos(theta) * Br - std::sin(theta) * Bt;
-    B[1] = std::sin(theta) * Br + std::cos(theta) * Bt;
+    float theta = atan2(y, x);
+    B[0] = cos(theta) * Br - sin(theta) * Bt;
+    B[1] = sin(theta) * Br + cos(theta) * Bt;
 #else
     B[0] = Br;
     B[1] = Bt;

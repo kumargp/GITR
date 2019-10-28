@@ -18,7 +18,6 @@
 #include <thrust/host_vector.h>
 #include <thrust/random.h>
 #endif
-
 #include <random>
 
 // CUDA_CALLABLE_MEMBER
@@ -112,13 +111,13 @@ public:
     //        Ez = E*cos(phi);
     this->vx[indx] =
         Ex / std::abs(Ex) *
-        std::sqrt(2.0 * std::abs(Ex) * 1.60217662e-19 / (amu * 1.6737236e-27));
+        sqrt(2.0 * std::abs(Ex) * 1.60217662e-19 / (amu * 1.6737236e-27));
     this->vy[indx] =
         Ey / std::abs(Ey) *
-        std::sqrt(2.0 * std::abs(Ey) * 1.60217662e-19 / (amu * 1.6737236e-27));
+        sqrt(2.0 * std::abs(Ey) * 1.60217662e-19 / (amu * 1.6737236e-27));
     this->vz[indx] =
         Ez / std::abs(Ez) *
-        std::sqrt(2.0 * std::abs(Ez) * 1.60217662e-19 / (amu * 1.6737236e-27));
+        sqrt(2.0 * std::abs(Ez) * 1.60217662e-19 / (amu * 1.6737236e-27));
 
     if (Ex == 0.0)
       this->vx[indx] = 0.0;
@@ -149,7 +148,7 @@ public:
     this->vx[indx] = Vx;
     this->vy[indx] = Vy;
     this->vz[indx] = Vz;
-    this->v[indx] = std::sqrt(Vx * Vx + Vy * Vy + Vz * Vz);
+    this->v[indx] = sqrt(Vx * Vx + Vy * Vy + Vz * Vz);
   };
   CUDA_CALLABLE_MEMBER
   void swapP(int indx, int n) {

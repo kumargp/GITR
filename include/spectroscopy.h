@@ -9,7 +9,7 @@
 
 #include "Particles.h"
 #include "Boundary.h"
-#include <cmath>
+#include "math.h"
 #include <vector>
 #if USE_CUDA >0
 #if __CUDA_ARCH__ < 600
@@ -28,7 +28,12 @@ __device__ double atomicAdd1(double* address, double val)
                  
                           return __longlong_as_double(old);
                           }
-                          #endif
+#else
+__device__ double atomicAdd1(double* address, double val)
+{
+  return atomicAdd(address,val);
+}
+#endif
 //__device__ double atomicAdd(double* address, double val)
 //{
 //   unsigned long long int* address_as_ull =
@@ -74,7 +79,7 @@ void operator()(std::size_t indx) const {
     float dim1 = particlesPointer->xprevious[indx];
 #else
   #if USECYLSYMM > 0
-    float dim1 = std::sqrt(x*x + y*y);
+    float dim1 = sqrtf(x*x + y*y);
     #else
     float dim1 = x;
     #endif
@@ -87,17 +92,17 @@ void operator()(std::size_t indx) const {
               dx = gridX[1] - gridX[0];
               dz = gridZ[1] - gridZ[0];
 #if SPECTROSCOPY < 3
-              int indx_X = std::floor((dim1-gridX[0])/dx);
-              int indx_Z = std::floor((z-gridZ[0])/dz);
+              int indx_X = floor((dim1-gridX[0])/dx);
+              int indx_Z = floor((z-gridZ[0])/dz);
               int indx_Y = 0;
               int nnYY=1;
 #else
               if((y > gridY[0]) && (y < gridY[nY-1]))
               { 
-              int indx_X = std::floor((dim1-gridX[0])/dx);
-              int indx_Z = std::floor((z-gridZ[0])/dz);
+              int indx_X = floor((dim1-gridX[0])/dx);
+              int indx_Z = floor((z-gridZ[0])/dz);
               dy = gridY[1] - gridY[0];
-              int indx_Y = std::floor((y-gridY[0])/dy);
+              int indx_Y = floor((y-gridY[0])/dy);
               if (indx_Y < 0 || indx_Y >= nY) indx_Y = 0;
               int nnYY = nY;
 #endif
@@ -109,7 +114,7 @@ void operator()(std::size_t indx) const {
               //std::cout << "dx " << dx << std::endl;
               //std::cout << "dz " << dz << std::endl;
               //std::cout << "ind x " << indx_X << "ind z " << indx_Z << std::endl;
-              int charge = std::floor(particlesPointer->charge[indx]);
+              int charge = floor(particlesPointer->charge[indx]);
               if(particlesPointer->hitWall[indx]== 0.0)
               {
                   float specWeight = particlesPointer->weight[indx];
