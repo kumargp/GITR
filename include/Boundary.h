@@ -111,7 +111,11 @@ class Boundary
     if (slope_dzdx == 0.0) {
       perpSlope = 1.0e12;
     } else {
+<<<<<<< Updated upstream
       perpSlope = -copysign(1.0, slope_dzdx) / abs(slope_dzdx);
+=======
+      perpSlope = -copysign(1.0, slope_dzdx) / std::abs(slope_dzdx);
+>>>>>>> Stashed changes
     }
     float Br = 1.0f / sqrt(perpSlope * perpSlope + 1.0);
     float Bt = 0.0;

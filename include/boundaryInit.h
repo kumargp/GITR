@@ -97,6 +97,7 @@ interp2dVector(&B[0],midpointx,midpointy,midpointz,nxB,nzB,bfieldGridr,
         float br = B[0];
         float bt = B[1];
         float bz = B[2];
+<<<<<<< Updated upstream
         float theta = acos((-br*b.slope_dzdx + bz)/(sqrt(br*br+bz*bz+bt*bt)*sqrt(b.slope_dzdx*b.slope_dzdx + 1.0)));
  
         if (theta > 3.14159265359*0.5)
@@ -106,6 +107,17 @@ interp2dVector(&B[0],midpointx,midpointy,midpointz,nxB,nzB,bfieldGridr,
 #endif        
         b.angle = theta*180.0/3.14159265359;
         b.debyeLength = sqrt(8.854187e-12*b.te/(b.ne*pow(background_Z,2)*1.60217662e-19));
+=======
+        float theta = std::acos((-br*b.slope_dzdx + bz)/(sqrt(br*br+bz*bz+bt*bt)*sqrt(b.slope_dzdx*b.slope_dzdx + 1.0)));
+ 
+        if (theta > 3.14159265359*0.5)
+        {
+            theta = std::acos((br*b.slope_dzdx - bz)/(sqrt(br*br+bz*bz+bt*bt)*sqrt(b.slope_dzdx*b.slope_dzdx + 1.0)));
+        }
+#endif        
+        b.angle = theta*180.0/3.14159265359;
+        b.debyeLength = sqrt(8.854187e-12*b.te/(b.ne*std::pow(background_Z,2)*1.60217662e-19));
+>>>>>>> Stashed changes
 	if(b.ne == 0.0) b.debyeLength = 1e12f;
         b.larmorRadius = 1.44e-4*sqrt(background_amu*b.ti/2)/(background_Z*norm_B);
         b.flux = 0.25*b.density*sqrt(8.0*b.ti*1.602e-19/(3.1415*background_amu));
@@ -114,8 +126,13 @@ interp2dVector(&B[0],midpointx,midpointy,midpointz,nxB,nzB,bfieldGridr,
         b.potential = potential;
         //float cs = sqrt(2*b.ti*1.602e-19/(1.66e-27*background_amu));
         //float jsat_ion = 1.602e-19*b.density*cs;
+<<<<<<< Updated upstream
         //b.ChildLangmuirDist = 2.0/3.0*pow(2*1.602e-19/(background_amu*1.66e-27),0.25)
         //*pow(potential,0.75)/(2.0*sqrt(3.1415*jsat_ion))*1.055e-5;
+=======
+        //b.ChildLangmuirDist = 2.0/3.0*std::pow(2*1.602e-19/(background_amu*1.66e-27),0.25)
+        //*std::pow(potential,0.75)/(2.0*sqrt(3.1415*jsat_ion))*1.055e-5;
+>>>>>>> Stashed changes
         if(b.te > 0.0)
         {
           b.ChildLangmuirDist = b.debyeLength*pow(abs(b.potential)/b.te,0.75);
