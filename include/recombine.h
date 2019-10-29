@@ -41,6 +41,11 @@ struct recombine {
   float* rateCoeff_Recombination;
   const float dt;
   float tion;
+
+    int dof_intermediate;
+    int idof;
+    int nP;
+    double* intermediate;
   //int& tt;
 #if __CUDACC__
       curandState *state;
@@ -58,7 +63,7 @@ struct recombine {
      float* _DensGridz,float* _ne,int _nR_Temp, int _nZ_Temp,
      float* _TempGridr, float* _TempGridz,float* _te,int _nTemperaturesRecomb,
      int _nDensitiesRecomb,float* _gridTemperature_Recombination,float* _gridDensity_Recombination,
-     float* _rateCoeff_Recombination) : 
+     float* _rateCoeff_Recombination,  double* intermediate, int nP, int idof, int dof_intermediate) : 
     particlesPointer(_particlesPointer),
 
                                                nR_Dens(_nR_Dens),
@@ -77,7 +82,7 @@ struct recombine {
                                                gridTemperature_Recombination(_gridTemperature_Recombination),
                                                rateCoeff_Recombination(_rateCoeff_Recombination),
                                                dt(_dt), // JDL missing tion?
-                                               state(_state) {
+                                               state(_state) , intermediate(intermediate),nP(nP),idof(idof), dof_intermediate(dof_intermediate){
   }
  
   
@@ -110,7 +115,10 @@ struct recombine {
     float r1=dist(state[1]);
     #endif
 #endif   
-
+        if(dof_intermediate > 0) {
+          int nthStep = particlesPointer->tt[indx];
+          intermediate[nP*dof_intermediate*nthStep+ indx*dof_intermediate+idof] = r1;
+        }
 	if(r1 <= P1)
 	{
         particlesPointer->charge[indx] = particlesPointer->charge[indx]-1;

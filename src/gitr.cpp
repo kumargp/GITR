@@ -42,9 +42,9 @@
 #ifdef __CUDACC__
 #include <curand.h>
 #include <curand_kernel.h>
-#include <experimental/filesystem>
+//#include <experimental/filesystem>
 #else
-#include <experimental/filesystem>
+//#include <experimental/filesystem>
 #endif
 
 #if USE_MPI
@@ -79,7 +79,8 @@ int main(int argc, char **argv, char **envp) {
   // read comand line arguments for specifying number of ppn (or gpus per node)
   // and specify input file if different than default
   // -nGPUPerNode and -i respectively
-  read_comand_line_args(argc,argv,ppn,inputFile);
+  bool writeIntermediate = false;
+  read_comand_line_args(argc,argv,ppn,inputFile, writeIntermediate);
 
 #if USE_MPI > 0
   // Get the number of processes
@@ -130,7 +131,7 @@ int main(int argc, char **argv, char **envp) {
     checkFlags(cfg);
 #endif
   }
-
+/*
 // show memory usage of GPU
 #if __CUDACC__
   namespace fsn = std::experimental::filesystem;
@@ -150,7 +151,7 @@ print_gpu_memory_usage(world_rank);
       std::cout << " Successfully Created " << std::endl;
     }
   }
-
+*/
   // Background species info
   float background_Z = 0.0, background_amu = 0.0;
   if (world_rank == 0) {
@@ -3652,6 +3653,23 @@ print_gpu_memory_usage(world_rank);
   *dev_tt = 0;
 #endif
   int tt = 0;
+
+  std::cout << "\n\n STARTING intermediate recording \n";
+ 
+  int dof_intermediate = 5;
+  int size_intermediate = 1;
+  int idof = 0;
+  if(writeIntermediate) {
+    dof_intermediate = 0;
+    std::cout << "\n\n**WARNING *** intermediate_data is not set for MPI \n\n";
+    size_intermediate = nP*nT*dof_intermediate;
+  }
+#if USE_CUDA > 0
+    sim::Array<double> intermediate(size_intermediate);
+#else
+    std::vector<double> intermediate(size_intermediate);
+#endif
+
   move_boris move_boris0(
       particleArray, dt, boundaries.data(), nLines, nR_Bfield, nZ_Bfield,
       bfieldGridr.data(), &bfieldGridz.front(), &br.front(), &bz.front(),
@@ -3661,7 +3679,7 @@ print_gpu_memory_usage(world_rank);
       nR_closeGeom_sheath, nY_closeGeom_sheath, nZ_closeGeom_sheath,
       n_closeGeomElements_sheath, &closeGeomGridr_sheath.front(),
       &closeGeomGridy_sheath.front(), &closeGeomGridz_sheath.front(),
-      &closeGeom_sheath.front());
+      &closeGeom_sheath.front(), &intermediate.front(), nP, idof, dof_intermediate);
   geometry_check geometry_check0(
       particleArray, nLines, &boundaries[0], surfaces, dt, nHashes,
       nR_closeGeom.data(), nY_closeGeom.data(), nZ_closeGeom.data(),
@@ -3679,20 +3697,22 @@ print_gpu_memory_usage(world_rank);
                      &gridZ_bins.front(), &net_Bins.front(), dt);
 #endif
 #if USEIONIZATION > 0
+  idof = 3;
   ionize ionize0(
       particleArray, dt, &state1.front(), nR_Dens, nZ_Dens, &DensGridr.front(),
       &DensGridz.front(), &ne.front(), nR_Temp, nZ_Temp, &TempGridr.front(),
       &TempGridz.front(), &te.front(), nTemperaturesIonize, nDensitiesIonize,
       &gridTemperature_Ionization.front(), &gridDensity_Ionization.front(),
-      &rateCoeff_Ionization.front());
+      &rateCoeff_Ionization.front(), &intermediate.front(), nP, idof, dof_intermediate);
 #endif
 #if USERECOMBINATION > 0
+  idof = 4;
   recombine recombine0(
       particleArray, dt, &state1.front(), nR_Dens, nZ_Dens, &DensGridr.front(),
       &DensGridz.front(), &ne.front(), nR_Temp, nZ_Temp, &TempGridr.front(),
       &TempGridz.front(), &te.front(), nTemperaturesRecombine,
       nDensitiesRecombine, gridTemperature_Recombination.data(),
-      gridDensity_Recombination.data(), rateCoeff_Recombination.data());
+      gridDensity_Recombination.data(), rateCoeff_Recombination.data(), &intermediate.front(), nP, idof, dof_intermediate);
 #endif
 #if USEPERPDIFFUSION > 0
   crossFieldDiffusion crossFieldDiffusion0(
@@ -3951,6 +3971,7 @@ print_gpu_memory_usage(world_rank);
     //}
     //// transfer data back to host
     // thrust::copy(d_vec.begin(), d_vec.end(), h_vec.begin());
+
 #ifdef __CUDACC__
     cudaDeviceSynchronize();
 #endif
@@ -4059,6 +4080,28 @@ print_gpu_memory_usage(world_rank);
   std::chrono::duration<float> fs = finish_clock - start_clock;
   printf("Time taken          is %6.3f (secs) \n", fs.count());
   printf("Time taken per step is %6.3f (secs) \n", fs.count() / (float)nT);
+
+
+
+
+  if(world_rank == 0 && writeIntermediate) {
+    netCDF::NcFile ncFile_hist("output/intermediate.nc", NcFile::replace);
+    netCDF::NcDim ncdim_np = ncFile_hist.addDim("nP", nP);
+    netCDF::NcDim ncdim_nthist = ncFile_hist.addDim("nTHist", nHistoriesPerParticle);
+    netCDF::NcDim ncdim_ntrun = ncFile_hist.addDim("nTRun", 1);
+    vector<NcDim>dims_intermediate;
+    dims_intermediate.push_back(ncdim_np);
+    dims_intermediate.push_back(ncdim_nthist);
+    
+    //netCDF::NcVar ncvar_ntrun = ncFile.addVar("nTrun", ncInt, ncdim_ntrun);
+    //netCDF::NcVar ncvar_ntrun = ncFile_hist.addVar("nTRun", ncInt, nT); 
+    netCDF::NcVar ncvar_data = ncFile_hist.addVar("intermediate", ncDouble, dims_intermediate);
+    ncvar_data.putVar(&intermediate[0]);
+  }
+
+
+
+
   // for(int i=0; i<nP;i++)
   //{
   //    std::cout << "Particle test value r1: " << i << " " <<
@@ -4618,6 +4661,7 @@ std::cout << "bound 255 " << boundaries[255].impacts << std::endl;
     // nc_surfADistGrid.putVar(&surfaces->gridA[0]);
     ncFile1.close();
 #endif
+
 #if PARTICLE_TRACKS > 0
 
     // Write netCDF output for histories

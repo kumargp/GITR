@@ -774,6 +774,10 @@ struct move_boris {
     const int nLines;
     float magneticForce[3];
     float electricForce[3];
+    int dof_intermediate;
+    int idof;
+    int nP;
+    double* intermediate;
     move_boris(Particles *_particlesPointer, float _span, Boundary *_boundaryVector,int _nLines,
             int _nR_Bfield, int _nZ_Bfield,
             float * _BfieldGridRDevicePointer,
@@ -788,7 +792,9 @@ struct move_boris {
             float * _EfieldRDevicePointer,
             float * _EfieldZDevicePointer,
             float * _EfieldTDevicePointer,
-            int _nR_closeGeom, int _nY_closeGeom,int _nZ_closeGeom, int _n_closeGeomElements, float *_closeGeomGridr,float *_closeGeomGridy, float *_closeGeomGridz, int *_closeGeom)
+            int _nR_closeGeom, int _nY_closeGeom,int _nZ_closeGeom, int _n_closeGeomElements, 
+             float *_closeGeomGridr,float *_closeGeomGridy, float *_closeGeomGridz, int *_closeGeom,
+             double* intermediate, int nP, int idof, int dof_intermediate)
         
 : particlesPointer(_particlesPointer),
         boundaryVector(_boundaryVector),
@@ -819,7 +825,8 @@ struct move_boris {
         span(_span),
         nLines(_nLines),
         magneticForce{0.0, 0.0, 0.0},
-        electricForce{0.0, 0.0, 0.0} {}
+        electricForce{0.0, 0.0, 0.0}, 
+       intermediate(intermediate),nP(nP),idof(idof), dof_intermediate(dof_intermediate) {}
 
 CUDA_CALLABLE_MEMBER    
 void operator()(std::size_t indx) { 
@@ -866,11 +873,10 @@ float operationsTime = 0.0f;
             for ( int s=0; s<nSteps; s++ ) 
             {
 #if USESHEATHEFIELD > 0
-	          minDist = getE(particlesPointer->xprevious[indx], particlesPointer->yprevious[indx], particlesPointer->zprevious[indx],E,boundaryVector,nLines,nR_closeGeom_sheath,
-                          nY_closeGeom_sheath,nZ_closeGeom_sheath,
-                              n_closeGeomElements_sheath,closeGeomGridr_sheath,
-                              closeGeomGridy_sheath,
-                                   closeGeomGridz_sheath,closeGeom_sheath, closestBoundaryIndex);
+	          minDist = getE(particlesPointer->xprevious[indx], particlesPointer->yprevious[indx], 
+                                particlesPointer->zprevious[indx],E,boundaryVector,nLines,nR_closeGeom_sheath,
+                               nY_closeGeom_sheath,nZ_closeGeom_sheath, n_closeGeomElements_sheath,closeGeomGridr_sheath,
+                              closeGeomGridy_sheath, closeGeomGridz_sheath,closeGeom_sheath, closestBoundaryIndex);
               //std::cout << "Efield in boris " <<E[0] << " " << E[1] << " " <<  E[2] << std::endl;
               //std::cout << "Charge and Hitwall " << particlesPointer->charge[indx] << " " <<
                // particlesPointer->hitWall[indx]  << std::endl;
@@ -899,7 +905,13 @@ float operationsTime = 0.0f;
                  vectorAdd(E,PSE,E);
               //std::cout << "Efield in boris " <<E[0] << " " << E[1] << " " <<  E[2] << std::endl;
 #endif
-#endif              
+#endif      
+          if(dof_intermediate > 0) {        
+            int nthStep = particlesPointer->tt[indx];
+	    intermediate[nP*dof_intermediate*nthStep+ indx*dof_intermediate+idof] = E[0];
+            intermediate[nP*dof_intermediate*nthStep+ indx*dof_intermediate+idof+1] = E[1];
+	    intermediate[nP*dof_intermediate*nthStep+ indx*dof_intermediate+idof+2] = E[2];
+          }
                 interp2dVector(&B[0],position[0], position[1], position[2],nR_Bfield,nZ_Bfield,
                     BfieldGridRDevicePointer,BfieldGridZDevicePointer,BfieldRDevicePointer,
                     BfieldZDevicePointer,BfieldTDevicePointer);        

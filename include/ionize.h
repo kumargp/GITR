@@ -41,6 +41,12 @@ struct ionize {
     float* rateCoeff_Ionization;
     const float dt;
     float tion;
+
+    int dof_intermediate;
+    int idof;
+    int nP;
+    double* intermediate;
+
     //int& tt;
 #if __CUDACC__
     curandState *state;
@@ -58,7 +64,7 @@ struct ionize {
     float* _DensGridz,float* _ne,int _nR_Temp, int _nZ_Temp,
     float* _TempGridr, float* _TempGridz,float* _te,int _nTemperaturesIonize,
     int _nDensitiesIonize,float* _gridTemperature_Ionization,float* _gridDensity_Ionization,
-    float* _rateCoeff_Ionization
+    float* _rateCoeff_Ionization ,double* intermediate, int nP, int idof, int dof_intermediate
               ) : 
    
          particlesPointer(_particlesPointer),
@@ -78,7 +84,8 @@ struct ionize {
                                          gridTemperature_Ionization(_gridTemperature_Ionization),
                                          rateCoeff_Ionization(_rateCoeff_Ionization),
                                          dt(_dt), // JDL missing tion here?
-                                         state(_state) {
+                                         state(_state),
+                        intermediate(intermediate),nP(nP),idof(idof), dof_intermediate(dof_intermediate) {
   }
 
         CUDA_CALLABLE_MEMBER_DEVICE 
@@ -122,7 +129,11 @@ struct ionize {
        //particlesPointer->test0[indx] = P; 
        //particlesPointer->test1[indx] = P1; 
        //particlesPointer->test2[indx] = r1; 
-	    if(r1 <= P1)
+	    if(dof_intermediate > 0) {
+              int nthStep = particlesPointer->tt[indx];
+	      intermediate[nP*dof_intermediate*nthStep+ indx*dof_intermediate+idof] = r1;
+	    }
+             if(r1 <= P1)
 	    {
 		  particlesPointer->charge[indx] = particlesPointer->charge[indx]+1;}
           particlesPointer->PionizationPrevious[indx] = 1.0;
