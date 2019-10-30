@@ -5,6 +5,7 @@
 #define CUDA_CALLABLE_MEMBER __host__ __device__
 #else
 #define CUDA_CALLABLE_MEMBER
+using namespace std;
 #endif
 
 #include <cstdlib>
@@ -44,7 +45,7 @@ class Particle  {
     #ifdef __CUDACC__
 	curandState streams[7];
 	#else
-        std::mt19937 streams[7];
+        mt19937 streams[7];
         #endif
 #endif
 	float hitWall;
@@ -77,9 +78,9 @@ class Particle  {
         this->amu = amu;
 		this->hitWall = 0.0;
         this->wallIndex = 0;
-		this->vx = Ex/std::abs(Ex)*sqrt(2.0*std::abs(Ex)*1.60217662e-19/(amu*1.6737236e-27));
-		this->vy = Ey/std::abs(Ey)*sqrt(2.0*std::abs(Ey)*1.60217662e-19/(amu*1.6737236e-27));
-		this->vz = Ez/std::abs(Ez)*sqrt(2.0*std::abs(Ez)*1.60217662e-19/(amu*1.6737236e-27));
+		this->vx = Ex/abs(Ex)*sqrt(2.0*abs(Ex)*1.60217662e-19/(amu*1.6737236e-27));
+		this->vy = Ey/abs(Ey)*sqrt(2.0*abs(Ey)*1.60217662e-19/(amu*1.6737236e-27));
+		this->vz = Ez/abs(Ez)*sqrt(2.0*abs(Ez)*1.60217662e-19/(amu*1.6737236e-27));
 		    
 		if(Ex == 0.0) this->vx = 0.0;
 		if(Ey == 0.0) this->vy = 0.0;

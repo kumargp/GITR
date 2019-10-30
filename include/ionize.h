@@ -18,6 +18,7 @@
 #ifdef __GNUC__ 
 #include <random>
 #include <stdlib.h>
+using namespace std;
 #endif
 
 #include "interpRateCoeff.hpp"
@@ -82,18 +83,18 @@ struct ionize {
   }
 
         CUDA_CALLABLE_MEMBER_DEVICE 
-                void operator()(std::size_t indx)  { 
+                void operator()(size_t indx)  { 
 	//if(particlesPointer->hitWall[indx] == 0.0){        
-        //std::cout << "interpolating rate coeff at "<< particlesPointer->x[indx] << " " << particlesPointer->y[indx] << " " << particlesPointer->z[indx] << std::endl;
+        //cout << "interpolating rate coeff at "<< particlesPointer->x[indx] << " " << particlesPointer->y[indx] << " " << particlesPointer->z[indx] << endl;
        tion = interpRateCoeff2d ( particlesPointer->charge[indx], particlesPointer->x[indx], particlesPointer->y[indx], particlesPointer->z[indx],nR_Temp,nZ_Temp, TempGridr,TempGridz,te,DensGridr,DensGridz, ne,nTemperaturesIonize,nDensitiesIonize,gridTemperature_Ionization,gridDensity_Ionization,rateCoeff_Ionization );	
     //float PiP = particlesPointer->PionizationPrevious[indx];
     float P = expf(-dt/tion);
     //particlesPointer->PionizationPrevious[indx] = PiP*P;
     float P1 = 1.0-P;
-    //std::cout << "tion P P1 " << tion << " " << P << " " << P1 << " " << PiP<< std::endl;
+    //cout << "tion P P1 " << tion << " " << P << " " << P1 << " " << PiP<< endl;
     if(particlesPointer->hitWall[indx] == 0.0)
     {
-        //std::cout << "calculating r1 " << std::endl;i
+        //cout << "calculating r1 " << endl;i
 #if PARTICLESEEDS > 0
 	#ifdef __CUDACC__
 	  //float r1 = 0.5;//curand_uniform(&particlesPointer->streams[indx]);
@@ -102,7 +103,7 @@ struct ionize {
 	std::uniform_real_distribution<float> dist(0.0, 1.0);
 	float r1=dist(state[indx]);
 	//particlesPointer->test[indx] = r1;
-        //std::cout << " r1 " << r1 << std::endl;
+        //cout << " r1 " << r1 << endl;
     #endif
 #else
   #if __CUDACC__
@@ -116,7 +117,7 @@ struct ionize {
 #endif
     //if(tt == 722)
     //{
-      //std::cout << "r1 " << r1 << " " << P1 << std::endl;
+      //cout << "r1 " << r1 << " " << P1 << endl;
 		//particlesPointer->charge[indx] = particlesPointer->charge[indx]+1;
        //particlesPointer->test[indx] = tion; 
        //particlesPointer->test0[indx] = P; 
@@ -126,7 +127,7 @@ struct ionize {
 	    {
 		  particlesPointer->charge[indx] = particlesPointer->charge[indx]+1;}
           particlesPointer->PionizationPrevious[indx] = 1.0;
-        //std::cout << "Particle " << indx << " ionized at step " << tt << std::endl;
+        //cout << "Particle " << indx << " ionized at step " << tt << endl;
        if(particlesPointer->firstIonizationZ[indx] == 0.0)
        {
            particlesPointer->firstIonizationZ[indx] = particlesPointer->z[indx];

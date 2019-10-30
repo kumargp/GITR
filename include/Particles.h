@@ -5,6 +5,7 @@
 #define CUDA_CALLABLE_MEMBER __host__ __device__
 #else
 #define CUDA_CALLABLE_MEMBER
+using namespace std;
 #endif
 
 #include "array.h"
@@ -24,7 +25,7 @@
 
 class Particles : public ManagedAllocation {
 public:
-  std::size_t nParticles;
+  size_t nParticles;
   sim::Array<int> index;
   sim::Array<float> x;
   sim::Array<float> y;
@@ -55,13 +56,13 @@ public:
   // sim::Array<curandState> streams_diff;
   // sim::Array<curandState> streams_surf;
 #else
-  // sim::Array<std::mt19937> streams;
-  // sim::Array<std::mt19937> streams_rec;
-  // sim::Array<std::mt19937> streams_collision1;
-  // sim::Array<std::mt19937> streams_collision2;
-  // sim::Array<std::mt19937> streams_collision3;
-  // sim::Array<std::mt19937> streams_diff;
-  // sim::Array<std::mt19937> streams_surf;
+  // sim::Array<mt19937> streams;
+  // sim::Array<mt19937> streams_rec;
+  // sim::Array<mt19937> streams_collision1;
+  // sim::Array<mt19937> streams_collision2;
+  // sim::Array<mt19937> streams_collision3;
+  // sim::Array<mt19937> streams_diff;
+  // sim::Array<mt19937> streams_surf;
 #endif
 #endif
 
@@ -110,14 +111,14 @@ public:
     //        Ey = E*sin(theta)*sin(phi);
     //        Ez = E*cos(phi);
     this->vx[indx] =
-        Ex / std::abs(Ex) *
-        sqrt(2.0 * std::abs(Ex) * 1.60217662e-19 / (amu * 1.6737236e-27));
+        Ex / abs(Ex) *
+        sqrt(2.0 * abs(Ex) * 1.60217662e-19 / (amu * 1.6737236e-27));
     this->vy[indx] =
-        Ey / std::abs(Ey) *
-        sqrt(2.0 * std::abs(Ey) * 1.60217662e-19 / (amu * 1.6737236e-27));
+        Ey / abs(Ey) *
+        sqrt(2.0 * abs(Ey) * 1.60217662e-19 / (amu * 1.6737236e-27));
     this->vz[indx] =
-        Ez / std::abs(Ez) *
-        sqrt(2.0 * std::abs(Ez) * 1.60217662e-19 / (amu * 1.6737236e-27));
+        Ez / abs(Ez) *
+        sqrt(2.0 * abs(Ez) * 1.60217662e-19 / (amu * 1.6737236e-27));
 
     if (Ex == 0.0)
       this->vx[indx] = 0.0;
@@ -125,8 +126,8 @@ public:
       this->vy[indx] = 0.0;
     if (Ez == 0.0)
       this->vz[indx] = 0.0;
-    // std::cout << " velocity " << this->vx[indx] << " " << this->vy[indx] << "
-    // " << this->vz[indx] << std::endl;
+    // cout << " velocity " << this->vx[indx] << " " << this->vy[indx] << "
+    // " << this->vz[indx] << endl;
   };
 
   CUDA_CALLABLE_MEMBER
@@ -219,7 +220,7 @@ public:
     this->firstIonizationT[n] = firstIonizationTT;
   };
   CUDA_CALLABLE_MEMBER
-  Particles(std::size_t nP)
+  Particles(size_t nP)
       : nParticles{nP}, index{nP, 0}, x{nP}, y{nP}, z{nP}, xprevious{nP},
         yprevious{nP}, zprevious{nP},v{nP, 0.0}, vx{nP}, vy{nP}, vz{nP}, Z{nP},
         amu{nP}, charge{nP}, newVelocity{nP}, nu_s{nP}, vD{nP, 0.0}, tt{nP, 0}, hasLeaked{nP, 0}, leakZ{nP,0.0},

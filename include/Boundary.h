@@ -18,6 +18,7 @@
 #include <curand_kernel.h>
 #else
 #include <random>
+using namespace std;
 #endif
 
 class Boundary 
@@ -55,7 +56,7 @@ class Boundary
     #ifdef __CUDACC__
     //curandState streams[7];
     #else
-    //mt19937 streams[7];
+    //std::mt19937 streams[7];
     #endif
 	
     float hitWall;
@@ -111,11 +112,7 @@ class Boundary
     if (slope_dzdx == 0.0) {
       perpSlope = 1.0e12;
     } else {
-<<<<<<< Updated upstream
       perpSlope = -copysign(1.0, slope_dzdx) / abs(slope_dzdx);
-=======
-      perpSlope = -copysign(1.0, slope_dzdx) / std::abs(slope_dzdx);
->>>>>>> Stashed changes
     }
     float Br = 1.0f / sqrt(perpSlope * perpSlope + 1.0);
     float Bt = 0.0;
@@ -131,7 +128,7 @@ class Boundary
 //B[0] = -a/plane_norm;
 //B[1] = -b/plane_norm;
 //B[2] = -c/plane_norm;
-//std::cout << "perp x and z comp " << B[0] << " " << B[2] << std::endl;
+//cout << "perp x and z comp " << B[0] << " " << B[2] << endl;
 #endif
     }
     CUDA_CALLABLE_MEMBER

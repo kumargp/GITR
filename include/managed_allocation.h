@@ -26,6 +26,8 @@ THE SOFTWARE.
 
 #if defined(CUDA)
 #include "cuda_runtime.h"
+#else
+using namespace std;
 #endif
 
 #include <iostream>
@@ -49,12 +51,12 @@ public:
 
   /*! new operator
    */
-  static void *operator new(std::size_t size) {
+  static void *operator new(size_t size) {
 #if defined(CUDA)
     void* data;
     auto err = cudaMallocManaged(&data, size);
     if(err != cudaSuccess) {
-      //throw std::runtime_error("error allocating managed memory");
+      //throw runtime_error("error allocating managed memory");
     }
     return data;
 #else
@@ -64,7 +66,7 @@ public:
 
   /*! new array operator
    */
-  static void *operator new[](std::size_t size) {
+  static void *operator new[](size_t size) {
     return ManagedAllocation::operator new(size);
   }
 

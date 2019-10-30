@@ -5,6 +5,7 @@
 #define CUDA_CALLABLE_MEMBER_DEVICE __device__
 #else
 #define CUDA_CALLABLE_MEMBER_DEVICE
+using namespace std;
 #endif
 #include <cstdlib>
 #include <iostream>
@@ -16,7 +17,7 @@ struct curandInitialize{
 #if __CUDACC__
    curandState *s;
 #else
-   std::mt19937 *s;
+   mt19937 *s;
 #endif
   int seed;
   
@@ -24,12 +25,12 @@ struct curandInitialize{
 #if __CUDACC__
          curandState *_s,
 #else
-         std::mt19937 *_s,
+         mt19937 *_s,
 #endif
          int _seed) : s(_s), seed(_seed) {} 
 //void curandInitialize(curandState *_s, int _seed) : s(_s),seed(_seed) {}
     CUDA_CALLABLE_MEMBER_DEVICE
-    void operator()(std::size_t indx) {
+    void operator()(size_t indx) {
 #if USE_CUDA
        //uint32_t block_id=blockIdx.y*gridDim.x+blockIdx.x;
        //uint32_t blockSize=blockDim.z*blockDim.y*blockDim.x;
@@ -44,8 +45,8 @@ struct curandInitialize{
 
         curand_init(indx, 0, 0, &s[indx]);
 #else
-        std::random_device randDevice;
-        std::mt19937 s0(randDevice());
+        random_device randDevice;
+        mt19937 s0(randDevice());
         s[indx] = s0;
 #endif
     }

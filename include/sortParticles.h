@@ -7,6 +7,7 @@
 #else
 #define CUDA_CALLABLE_MEMBER_DEVICE
 #define CUDA_CALLABLE_MEMBER_HOST
+using namespace std;
 #endif
 
 #include "Particles.h"
@@ -42,19 +43,19 @@ struct sortParticles {
 #if __CUDACC__
     curandState *state;
 #else
-    std::mt19937 *state;
+    mt19937 *state;
 #endif
 
     sortParticles(Particles *_particles,int _nP, float _weightThreshold,int& _tt,int _nDtPerApply, int* _startIndx,int* _nActiveParticles,int _rank,
 #if __CUDACC__
                 curandState *_state)
 #else
-                std::mt19937 *_state)
+                mt19937 *_state)
 #endif
     : particles(_particles),nP(_nP), weightThreshold(_weightThreshold),tt(_tt),nDtPerApply(_nDtPerApply), startIndx(_startIndx), nActiveParticles(_nActiveParticles),rank(_rank),state(_state) {}
     
     CUDA_CALLABLE_MEMBER_DEVICE 
-    void operator()(std::size_t indx) const 
+    void operator()(size_t indx) const 
     { 
     if(tt%nDtPerApply==0 && tt>0)
     {
@@ -63,10 +64,10 @@ struct sortParticles {
        int end = start+nPonRank-1;
        sim::Array<float> weight(nPonRank,0.0); 
        sim::Array<thrust::pair<int,float>> pairs(nPonRank);
-       //std::cout << "rank tt n start " << rank<<" "<< tt<<" "<< start<< std::endl;
+       //cout << "rank tt n start " << rank<<" "<< tt<<" "<< start<< endl;
 //#ifdef __CUDACC__
 	//#else
-	//  std::uniform_real_distribution<float> dist(0.0, 1.0);
+	//  uniform_real_distribution<float> dist(0.0, 1.0);
         //#endif
        for(int i=0;i<nPonRank;i++)
        {
@@ -79,27 +80,27 @@ struct sortParticles {
         weight[i] =particles->weight[start+i];
 	pairs[i].first = i;
         pairs[i].second = weight[i];
-       //std::cout << "pair "  << " " << pairs[i].first << " " << pairs[i].second << std::endl;
+       //cout << "pair "  << " " << pairs[i].first << " " << pairs[i].second << endl;
        }
        //sim::Array<float> weight0(weight); 
        thrust::sort(thrust::device,pairs.begin(),pairs.end(),ordering());
        for(int i=0;i<nPonRank;i++)
        {
-       //std::cout << "pair "  << i<<" " << pairs[i].first << " " << pairs[i].second << std::endl;
+       //cout << "pair "  << i<<" " << pairs[i].first << " " << pairs[i].second << endl;
        weight[i] = pairs[i].second; 
        }
        sim::Array<float> weightThresholdA(1,weightThreshold);
        sim::Array<int> lowerBoundIndex(1,0);
-       //std::cout << "weights " << " " << weightThresholdA[0] << std::endl;
+       //cout << "weights " << " " << weightThresholdA[0] << endl;
        thrust::upper_bound(weight.begin(), weight.end(),
                            weightThresholdA.begin(),weightThresholdA.end() , 
         		   lowerBoundIndex.begin(),thrust::greater<float>());
-       //std::cout << " min index " << lowerBoundIndex[0] << " " << weight[lowerBoundIndex[0]] << std::endl;
+       //cout << " min index " << lowerBoundIndex[0] << " " << weight[lowerBoundIndex[0]] << endl;
        int nUnderThresh=nPonRank-lowerBoundIndex[0];
-       std::cout << " nPartivles under thresh " << nUnderThresh << std::endl;
+       cout << " nPartivles under thresh " << nUnderThresh << endl;
        int nSwapsNeeded=0;
        int goodParticles = nPonRank-nUnderThresh;
-       //std::cout << " n good particles " << goodParticles << std::endl;
+       //cout << " n good particles " << goodParticles << endl;
        for(int i=0;i<nUnderThresh;i++)
        {
         if(pairs[nPonRank-nUnderThresh+i].first < goodParticles)
@@ -107,7 +108,7 @@ struct sortParticles {
           nSwapsNeeded=nSwapsNeeded+1;
         }
        }
-       //std::cout << " nSwapsNeeded " << nSwapsNeeded << std::endl;
+       //cout << " nSwapsNeeded " << nSwapsNeeded << endl;
        sim::Array<int> swapBad(nSwapsNeeded),swapGood(nSwapsNeeded);
        int ind=0;
        for(int i=0;i<nUnderThresh;i++)
@@ -115,20 +116,20 @@ struct sortParticles {
         if(pairs[nPonRank-nUnderThresh+i].first < goodParticles)
         {
 	  swapBad[ind] = pairs[nPonRank-nUnderThresh+i].first;
-       //std::cout << " swapBad " << ind <<" " << swapBad[ind]<<" " << "weight0[swapBad[ind]]" << std::endl;
+       //cout << " swapBad " << ind <<" " << swapBad[ind]<<" " << "weight0[swapBad[ind]]" << endl;
           ind=ind+1;
         }
        }
        ind=0;
-       //std::cout << "swap good going from 0 to " << goodParticles << std::endl;
+       //cout << "swap good going from 0 to " << goodParticles << endl;
        for(int i=0;i<goodParticles;i++)
        {
-       //std::cout << " swapGood1 " << i <<" "<<ind<< " "  << std::endl;
-       //std::cout << " pairs[i].first " << pairs[i].first <<" "<< " "  << std::endl;
+       //cout << " swapGood1 " << i <<" "<<ind<< " "  << endl;
+       //cout << " pairs[i].first " << pairs[i].first <<" "<< " "  << endl;
         if(pairs[i].first > goodParticles-1)
         {
           swapGood[ind]=pairs[i].first;
-       //std::cout << " swapGood " << ind <<" " << swapGood[ind]<<" " << "weight0[swapGood[ind]]" << std::endl;
+       //cout << " swapGood " << ind <<" " << swapGood[ind]<<" " << "weight0[swapGood[ind]]" << endl;
           ind=ind+1;
         }
        }
@@ -137,7 +138,7 @@ struct sortParticles {
        }
        for(int i=0;i<nPonRank;i++)
        {
-         //std::cout << " weight0 " << i << " " << particles->weight[start+i]<< " " << particles->index[i] << std::endl;
+         //cout << " weight0 " << i << " " << particles->weight[start+i]<< " " << particles->index[i] << endl;
        }
        nActiveParticles[rank] = goodParticles;
     }

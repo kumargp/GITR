@@ -5,6 +5,7 @@
 #define CUDA_CALLABLE_MEMBER __host__ __device__
 #else
 #define CUDA_CALLABLE_MEMBER
+using namespace std;
 #endif
 
 #include "array.h"
@@ -66,7 +67,7 @@ public:
   };
 
   CUDA_CALLABLE_MEMBER
-  Surfaces(std::size_t nS,std::size_t nE, std::size_t nA) :
+  Surfaces(size_t nS,size_t nE, size_t nA) :
    sumParticlesStrike{nS,0}, gridE{nE,0.0}, gridA{nA,0.0},
    sumWeightStrike{nS,0.0}, grossDeposition{nS,0.0},
     grossErosion{nS,0.0}, aveSputtYld{nS,0.0}, sputtYldCount{nS,0},

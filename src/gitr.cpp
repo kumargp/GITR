@@ -762,13 +762,7 @@ std::cout << "GEOM_HASH 1 \n";
   fsec0 fs0 = finish_clock0 - start_clock0;
   printf("Time taken          is %6.3f (secs) \n", fs0.count());
   if (world_rank == 0) {
-<<<<<<< Updated upstream
-=======
 
-struct stat info; if( stat( "output", &info ) == 0 )  printf( "Found  dir 'output'\n");
-printf("nHashes %d \n", nHashes);
-
->>>>>>> Stashed changes
    for (int i = 0; i < nHashes; i++) {
       NcFile ncFile_hash("output/geomHash" + std::to_string(i) + ".nc",
                          NcFile::replace);

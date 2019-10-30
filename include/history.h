@@ -5,6 +5,7 @@
 #define CUDA_CALLABLE_MEMBER_DEVICE __device__
 #else
 #define CUDA_CALLABLE_MEMBER_DEVICE
+using namespace std;
 #endif
 
 #include "Particles.h"
@@ -32,19 +33,19 @@ struct history {
         histX(_histX),histY(_histY),histZ(_histZ),histv(_histv),histvx(_histvx),histvy(_histvy),histvz(_histvz), histcharge(_histcharge), histweight(_histweight) {}
 
     CUDA_CALLABLE_MEMBER_DEVICE    
-void operator()(std::size_t indx) const 
+void operator()(size_t indx) const 
     {  
        int tt0=particlesPointer->tt[indx];
        particlesPointer->tt[indx] = particlesPointer->tt[indx]+1;
-       //std::cout << "tt subsamplefac indx, nT " << tt0 << " "<< subSampleFac << " " << indx << " " << nT << std::endl;
+       //cout << "tt subsamplefac indx, nT " << tt0 << " "<< subSampleFac << " " << indx << " " << nT << endl;
        if (tt0 % subSampleFac == 0)
        {
        int indexP = particlesPointer->index[indx];
         int histInd = indexP*(nT/subSampleFac+1) + tt0/subSampleFac;
-       //std::cout << "histInd " << histInd << std::endl;
+       //cout << "histInd " << histInd << endl;
         if(histInd <= (nP*(nT/subSampleFac+1)) && histInd >= 0 && indexP < nP)
         {
-	  //std::cout << "inside history " << indx << " " << histInd << " " << particlesPointer->zprevious[indx] << std::endl;
+	  //cout << "inside history " << indx << " " << histInd << " " << particlesPointer->zprevious[indx] << endl;
           histX[histInd] = particlesPointer->xprevious[indexP];
           histY[histInd] = particlesPointer->yprevious[indexP];
           histZ[histInd] = particlesPointer->zprevious[indexP];

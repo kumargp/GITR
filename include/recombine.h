@@ -7,6 +7,7 @@
 #else
 #define CUDA_CALLABLE_MEMBER_DEVICE
 #define CUDA_CALLABLE_MEMBER_HOST
+using namespace std;
 #endif
 
 #include "Particles.h"
@@ -82,7 +83,7 @@ struct recombine {
  
   
   CUDA_CALLABLE_MEMBER_DEVICE 
-  void operator()(std::size_t indx) { 
+  void operator()(size_t indx) { 
   float P1 = 0.0f;
       if(particlesPointer->charge[indx] > 0)
     {

@@ -5,6 +5,7 @@
 #define CUDA_CALLABLE_MEMBER_DEVICE __device__
 #else
 #define CUDA_CALLABLE_MEMBER_DEVICE
+using namespace std;
 #endif
 
 #include "Particles.h"
@@ -66,7 +67,7 @@ struct spec_bin {
         dt(_dt) {}
 
     CUDA_CALLABLE_MEMBER_DEVICE    
-void operator()(std::size_t indx) const { 
+void operator()(size_t indx) const { 
 //    int indx_X = 0;
 //    int indx_Z = 0;
     float dx = 0.0f;
@@ -108,12 +109,12 @@ void operator()(std::size_t indx) const {
 #endif
               if (indx_X < 0 || indx_X >= nX) indx_X = 0;
               if (indx_Z < 0 || indx_Z >= nZ) indx_Z = 0;
-              //std::cout << "gridx0 " << gridX[0] << std::endl;
-              //std::cout << "gridz0 " << gridZ[0] << std::endl;
+              //cout << "gridx0 " << gridX[0] << endl;
+              //cout << "gridz0 " << gridZ[0] << endl;
               
-              //std::cout << "dx " << dx << std::endl;
-              //std::cout << "dz " << dz << std::endl;
-              //std::cout << "ind x " << indx_X << "ind z " << indx_Z << std::endl;
+              //cout << "dx " << dx << endl;
+              //cout << "dz " << dz << endl;
+              //cout << "ind x " << indx_X << "ind z " << indx_Z << endl;
               int charge = floor(particlesPointer->charge[indx]);
               if(particlesPointer->hitWall[indx]== 0.0)
               {

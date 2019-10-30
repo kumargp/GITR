@@ -5,6 +5,7 @@
 #define CUDA_CALLABLE_MEMBER __host__ __device__
 #else
 #define CUDA_CALLABLE_MEMBER
+using namespace std;
 #endif
 #include "Particles.h"
 #include "Boundary.h"
@@ -45,7 +46,7 @@ struct field_line_trace {
     BfieldR(_BfieldR), BfieldZ(_BfieldZ), BfieldT(_BfieldT) {}
 
 CUDA_CALLABLE_MEMBER    
-void operator()(std::size_t indx) const { 
+void operator()(size_t indx) const { 
     float B[3] = {0.0f,0.0f,0.0f};
     float Bnorm[3] = {0.0f,0.0f,0.0f};
     float Bmag = 0.0f;
@@ -72,13 +73,13 @@ if(particles->hitWall[indx] == 0.0)
     interp2dVector(&B[0],x0, y0,z0,
             nR_Bfield,nZ_Bfield,BfieldGridR,BfieldGridZ,
             BfieldR,BfieldZ,BfieldT);
-    //std::cout << "Bfield interp " << B[0] << " " << B[1] << " " << B[2] << std::endl;
+    //cout << "Bfield interp " << B[0] << " " << B[1] << " " << B[2] << endl;
     vectorNormalize(B,B);
     //Bmag = sqrt(B[0]*B[0] + B[1]*B[1] + B[2]*B[2]);
     //Bnorm[0] = B[0]/Bmag;
     //Bnorm[1] = B[1]/Bmag;
     //Bnorm[2] = B[2]/Bmag;
-    //std::cout << "Bfield interp " << B[0] << " " << B[1] << " " << B[2] << std::endl;
+    //cout << "Bfield interp " << B[0] << " " << B[1] << " " << B[2] << endl;
     vectorScalarMult(dr_fac,B,k1);
 
     interp2dVector(&B[0],x0+0.5*k1[0],y0+0.5*k1[1],z0+0.5*k1[2],

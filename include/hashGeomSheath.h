@@ -18,6 +18,7 @@
 
 #ifdef __GNUC__ 
 #include <random>
+using namespace std;
 #endif
 
 #include "interpRateCoeff.hpp"
@@ -52,13 +53,13 @@ struct hashGeom_sheath {
                closeGeom(_closeGeom), nR(_nR), nY(_nY), nZ(_nZ) {}
     
     CUDA_CALLABLE_MEMBER_DEVICE 
-    void operator()(std::size_t indx) const { 
+    void operator()(size_t indx) const { 
       #if USE3DTETGEOM > 0
        float kk = indx/(nR*nY);
-       int k = std::floor(kk);
+       int k = floor(kk);
        int jjj = indx - k*nR*nY;
        float jj = 1.0*jjj/nR;
-       int j = std::floor(jj);
+       int j = floor(jj);
        int i = indx - j*nR - k*(nR*nY);
        int xyzIndx = indx;
        float x0 = x[i];
@@ -66,7 +67,7 @@ struct hashGeom_sheath {
        float z0 = z[k];
       #else
        float kk = indx/(nR);
-       int k = std::floor(kk);
+       int k = floor(kk);
        int i = indx - k*(nR);
        float x0 = x[i];
        float y0 = 0.0;
@@ -142,7 +143,7 @@ struct hashGeom_sheath {
         signDot0 = copysign(1.0,vectorDotProduct(crossABAp, normalVector));
         signDot1 = copysign(1.0,vectorDotProduct(crossBCBp, normalVector));
         signDot2 = copysign(1.0,vectorDotProduct(crossCACp, normalVector));
-        totalSigns = std::abs(signDot0 + signDot1 + signDot2);
+        totalSigns = abs(signDot0 + signDot1 + signDot2);
         if (totalSigns == 3.0) {
         } else
           perpDist = 1.0e6;
@@ -203,7 +204,7 @@ struct hashGeom_sheath {
           #endif
           float minOf3 = min(d1,d2);
           minOf3 = min(minOf3,minEdge);
-        //std::cout << "min of two " << minOf3 << std::endl;
+        //cout << "min of two " << minOf3 << endl;
           #if USE3DTETGEOM > 0
           minOf3 = min(minOf3,perpDist);
             minOf3 = min(minOf3,d3);
