@@ -17,6 +17,8 @@ using namespace std;
 #include "interp2d.hpp"
 #include <algorithm>
 
+#define DEBUG_PRINT 1
+
 CUDA_CALLABLE_MEMBER
 void vectorAdd(float A[], float B[],float C[])
 {
@@ -92,7 +94,7 @@ CUDA_CALLABLE_MEMBER
 float getE ( float x0, float y, float z, float E[], Boundary *boundaryVector, int nLines,
        int nR_closeGeom, int nY_closeGeom,int nZ_closeGeom, int n_closeGeomElements, 
        float *closeGeomGridr,float *closeGeomGridy, float *closeGeomGridz, int *closeGeom, 
-         int&  closestBoundaryIndex) {
+         int&  closestBoundaryIndex, int ptcl) {
 #if USE3DTETGEOM > 0
     float Emag = 0.0f;
     float Er = 0.0f;
@@ -685,6 +687,9 @@ float getE ( float x0, float y, float z, float E[], Boundary *boundaryVector, in
 #if BIASED_SURFACE > 0
     pot = boundaryVector[minIndex].potential;
     Emag = pot/(2.0f*boundaryVector[minIndex].ChildLangmuirDist)*expf(-minDistance/(2.0f*boundaryVector[minIndex].ChildLangmuirDist));
+ if(DEBUG_PRINT)   
+printf("calcE: ptcl %d pot %g CLD %g mindist %g Emag %g dirV %g %g %g\n", ptcl, pot, boundaryVector[minIndex].ChildLangmuirDist,
+    minDistance, Emag, directionUnitVector[0], directionUnitVector[1] , directionUnitVector[2]);
 #else 
     angle = boundaryVector[minIndex].angle;    
     fd  =  0.98992f + 5.1220E-03f * angle  -
@@ -775,6 +780,11 @@ struct move_boris {
     const int nLines;
     float magneticForce[3];
     float electricForce[3];
+
+    int dof_intermediate;
+    int idof;
+    int nT;
+    double* intermediate;
     move_boris(Particles *_particlesPointer, float _span, Boundary *_boundaryVector,int _nLines,
             int _nR_Bfield, int _nZ_Bfield,
             float * _BfieldGridRDevicePointer,
@@ -789,8 +799,9 @@ struct move_boris {
             float * _EfieldRDevicePointer,
             float * _EfieldZDevicePointer,
             float * _EfieldTDevicePointer,
-            int _nR_closeGeom, int _nY_closeGeom,int _nZ_closeGeom, int _n_closeGeomElements, float *_closeGeomGridr,float *_closeGeomGridy, float *_closeGeomGridz, int *_closeGeom)
-        
+            int _nR_closeGeom, int _nY_closeGeom,int _nZ_closeGeom, int _n_closeGeomElements, 
+            float *_closeGeomGridr,float *_closeGeomGridy, float *_closeGeomGridz, int *_closeGeom,
+            double* intermediate, int nT, int idof, int dof_intermediate)
 : particlesPointer(_particlesPointer),
         boundaryVector(_boundaryVector),
         nR_Bfield(_nR_Bfield),
@@ -820,7 +831,8 @@ struct move_boris {
         span(_span),
         nLines(_nLines),
         magneticForce{0.0, 0.0, 0.0},
-        electricForce{0.0, 0.0, 0.0} {}
+        electricForce{0.0, 0.0, 0.0},
+        intermediate(intermediate),nT(nT),idof(idof), dof_intermediate(dof_intermediate) {}
 
 CUDA_CALLABLE_MEMBER    
 void operator()(size_t indx) { 
@@ -871,8 +883,9 @@ float operationsTime = 0.0f;
                           nY_closeGeom_sheath,nZ_closeGeom_sheath,
                               n_closeGeomElements_sheath,closeGeomGridr_sheath,
                               closeGeomGridy_sheath,
-                                   closeGeomGridz_sheath,closeGeom_sheath, closestBoundaryIndex);
-              //cout << "Efield in boris " <<E[0] << " " << E[1] << " " <<  E[2] << endl;
+                                   closeGeomGridz_sheath,closeGeom_sheath, closestBoundaryIndex, particlesPointer->index[indx]);
+
+                  //cout << "Efield in boris " <<E[0] << " " << E[1] << " " <<  E[2] << endl;
               //cout << "Charge and Hitwall " << particlesPointer->charge[indx] << " " <<
                // particlesPointer->hitWall[indx]  << endl;
 #endif
@@ -898,9 +911,24 @@ float operationsTime = 0.0f;
                      EfieldZDevicePointer,EfieldTDevicePointer);
                  
                  vectorAdd(E,PSE,E);
-              //cout << "Efield in boris " <<E[0] << " " << E[1] << " " <<  E[2] << endl;
 #endif
-#endif              
+#endif
+             if(dof_intermediate > 0) {
+               auto pindex = particlesPointer->index[indx];
+               auto nthStep = particlesPointer->tt[indx];
+               int qc = particlesPointer->charge[indx];
+               auto beg = pindex*nT*dof_intermediate + (nthStep-1)*dof_intermediate;
+               intermediate[beg+idof] = E[0];
+               intermediate[beg+idof+1] = E[1];
+               intermediate[beg+idof+2] = E[2];
+               intermediate[beg+idof+3] = position[0];
+               intermediate[beg+idof+4] = position[1];
+               intermediate[beg+idof+5] = position[2];
+               intermediate[beg+idof+10] = qc;
+            if(DEBUG_PRINT)   
+               printf("\nboris ptcl %d t %d charge %d @ %d E-boris %g %g %g minDist %g pos %g %g %g \n", 
+                   pindex, nthStep-1, qc, beg, E[0],E[1],E[2], minDist, position[0], position[1], position[2]);
+             }              
                 interp2dVector(&B[0],position[0], position[1], position[2],nR_Bfield,nZ_Bfield,
                     BfieldGridRDevicePointer,BfieldGridZDevicePointer,BfieldRDevicePointer,
                     BfieldZDevicePointer,BfieldTDevicePointer);        
@@ -914,7 +942,10 @@ float operationsTime = 0.0f;
                 vectorAssign(particlesPointer->vx[indx], particlesPointer->vy[indx], particlesPointer->vz[indx],v);
                 //cout << "velocity " << v[0] << " " << v[1] << " " << v[2] << endl;
                 //v_minus = v + q_prime*E;
-               vectorScalarMult(q_prime,E,qpE);
+float v0[] = {v[0],v[1],v[2]};
+if(DEBUG_PRINT)
+  printf("borisvel0  ptcl %d %g %g %g \n", particlesPointer->index[indx], v[0],v[1],v[2]); 
+                vectorScalarMult(q_prime,E,qpE);
                vectorAdd(v,qpE,v_minus);
                this->electricForce[0] = 2.0*qpE[0];
 	       //cout << "e force " << q_prime << " " << PSE[0] << " " << PSE[1] << " " << PSE[2] << endl;
@@ -966,7 +997,12 @@ float operationsTime = 0.0f;
                 particlesPointer->vx[indx] = v[0];
                 particlesPointer->vy[indx] = v[1];
                 particlesPointer->vz[indx] = v[2];    
-              
+float dv[] = {v[0] - v0[0], v[1]-v0[1], v[2]-v0[2]};
+
+if(DEBUG_PRINT) {
+  printf("borisUpdatedVel  ptcl %d %g %g %g :dv %g %g %g \n", particlesPointer->index[indx], v[0],v[1], v[2], dv[0], dv[1], dv[2]);              
+  printf("borisUpdatedPos  ptcl %d %g %g %g \n", particlesPointer->index[indx], position[0] + v[0] * dt, position[1] + v[1] * dt, position[2] + v[2] * dt); 
+}
 //cout << "velocity " << v[0] << " " << v[1] << " " << v[2] << endl;
     	    }
             }

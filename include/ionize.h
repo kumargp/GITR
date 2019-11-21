@@ -42,6 +42,11 @@ struct ionize {
     float* rateCoeff_Ionization;
     const float dt;
     float tion;
+
+    int dof_intermediate;
+    int idof;
+    int nT;
+    double* intermediate;
     //int& tt;
 #if __CUDACC__
     curandState *state;
@@ -59,7 +64,7 @@ struct ionize {
     float* _DensGridz,float* _ne,int _nR_Temp, int _nZ_Temp,
     float* _TempGridr, float* _TempGridz,float* _te,int _nTemperaturesIonize,
     int _nDensitiesIonize,float* _gridTemperature_Ionization,float* _gridDensity_Ionization,
-    float* _rateCoeff_Ionization
+    float* _rateCoeff_Ionization, double* intermediate, int nT, int idof, int dof_intermediate
               ) : 
    
          particlesPointer(_particlesPointer),
@@ -79,7 +84,7 @@ struct ionize {
                                          gridTemperature_Ionization(_gridTemperature_Ionization),
                                          rateCoeff_Ionization(_rateCoeff_Ionization),
                                          dt(_dt), // JDL missing tion here?
-                                         state(_state) {
+                                         state(_state), intermediate(intermediate),nT(nT),idof(idof), dof_intermediate(dof_intermediate) {
   }
 
         CUDA_CALLABLE_MEMBER_DEVICE 
@@ -123,8 +128,21 @@ struct ionize {
        //particlesPointer->test0[indx] = P; 
        //particlesPointer->test1[indx] = P1; 
        //particlesPointer->test2[indx] = r1; 
-	    if(r1 <= P1)
-	    {
+
+    if(dof_intermediate > 0) {
+        int nthStep = particlesPointer->tt[indx];
+        auto pindex = particlesPointer->index[indx];
+        auto beg = pindex*nT*dof_intermediate + (nthStep-1)*dof_intermediate;
+        intermediate[beg+idof] = r1;
+        intermediate[beg+idof+1] = tion;
+        auto xx=particlesPointer->x[indx];
+        auto yy=particlesPointer->y[indx];
+        auto zz=particlesPointer->z[indx];
+        //if(false)
+          printf("ioni: ptcl %d rate %g ionirand %g P1 %g pos %g %g %g \n", pindex, tion, r1, P1, xx, yy, zz);
+      }
+      if(r1 <= P1)
+      {
 		  particlesPointer->charge[indx] = particlesPointer->charge[indx]+1;}
           particlesPointer->PionizationPrevious[indx] = 1.0;
         //cout << "Particle " << indx << " ionized at step " << tt << endl;

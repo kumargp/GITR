@@ -28,7 +28,8 @@ using namespace netCDF;
 using namespace exceptions;
 using namespace netCDF::exceptions;
 using namespace libconfig;
-void  read_comand_line_args(const int argc,char** argv,int& ppn,std::string& inputFile)
+void  read_comand_line_args(const int argc,char** argv,int& ppn,std::string& inputFile,
+    bool& writeStepDataSelected)
 {
 
   int counter;
@@ -59,6 +60,9 @@ void  read_comand_line_args(const int argc,char** argv,int& ppn,std::string& inp
           exit(0);
         }
       }
+       if (std::string(argv[counter]) == "writesteps") {
+         writeStepDataSelected = 1;
+       }
     }
   }
 }

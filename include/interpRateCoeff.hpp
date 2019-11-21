@@ -42,6 +42,7 @@ float rateCoeffInterp(int charge, float te, float ne,int nT, int nD, float* rate
     //cout << "Indices density, temp " << indN << " " <<indT<<endl;
     //cout << "charge " << charge << endl;
     //cout << "Lower value " << Ratesp[charge*nT*nD + indT*nD + indN] << endl;
+
 if(indT < 0 || indT > nT-2)
 {indT = 0;}
 if(indN < 0 || indN > nD-2)
@@ -65,6 +66,9 @@ if(charge > 74-1)
             + bN*pow(10.0f,Ratesp[charge*nT*nD            + (indT+1)*nD + indN+1]))/abN;
     float fxz = (aT*fx_z1+bT*fx_z2)/abT;
     //cout << "fxz1 and 2 " << fx_z1 << " " << fx_z2<< " "<< fxz << endl;
+//if(false)
+  printf("rateCoeffInterp:logT %g logn %g d_T %g d_n %g indT %d indN %d  aT %g bT %g abT %g aN %g bN %g abN %g fx_z1 %g fx_z2 %g fxz %g\n", 
+    logT, logn, d_T, d_n, indT, indN, aT, bT, abT, aN, bN, abN, fx_z1, fx_z2, fxz);
     return fxz;    
 }
 
@@ -92,6 +96,8 @@ float interpRateCoeff2d ( int charge, float x, float y, float z,int nx, int nz, 
     float RClocal = rateCoeffInterp(charge,tlocal,nlocal,nT_Rates,nD_Rates,rateGrid_Temp, rateGrid_Dens, Rates);
     float tion = 1/(RClocal*nlocal);
     if(tlocal == 0.0 || nlocal == 0.0) tion=1.0e12;
+   //if(false)
+      printf("interpRateCoeff2d:tlocal %g nlocal %g RClocal %g charge %d \n", tlocal, nlocal, RClocal, charge);
     //cout << "Returning " << endl;
     return tion;
 }

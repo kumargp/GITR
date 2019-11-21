@@ -81,7 +81,8 @@ int main(int argc, char **argv, char **envp) {
   // read comand line arguments for specifying number of ppn (or gpus per node)
   // and specify input file if different than default
   // -nGPUPerNode and -i respectively
-  read_comand_line_args(argc,argv,ppn,inputFile);
+  bool writeIntermediate = false;
+  read_comand_line_args(argc,argv,ppn,inputFile, writeIntermediate);
 
 #if USE_MPI > 0
   // Get the number of processes
@@ -801,10 +802,8 @@ std::cout << "GEOM_HASH 1 \n";
       if (i > 0)
         ncIndex = nR_closeGeom[i - 1] * nY_closeGeom[i - 1] *
                   nZ_closeGeom[i - 1] * n_closeGeomElements[i - 1];
- std::cout << "ncIndex " << ncIndex << "\n";
- std::cout << "closeGeom[ncIndex] " << closeGeom[ncIndex] << "\n";
       hash.putVar(&closeGeom[ncIndex]);
-      ncFile_hash.close();
+     // ncFile_hash.close();
     }
   }
 #elif GEOM_HASH > 1
@@ -3658,6 +3657,21 @@ std::cout << "GEOM_HASH 1 \n";
   *dev_tt = 0;
 #endif
   int tt = 0;
+  
+  int dof_intermediate = 0;
+  int size_intermediate = 1;
+  if(writeIntermediate) {
+    dof_intermediate = 11; //with pos
+    std::cout << "\n**WARNING *** intermediate_data is not set for MPI\n";
+    size_intermediate = nP*(nT+1)*dof_intermediate;
+    std::cout << "\n\n STARTING intermediate data stoing :size " << size_intermediate << " \n";
+  }
+  #if USE_CUDA > 0
+     sim::Array<double> intermediate(size_intermediate);
+  #else
+      std::vector<double> intermediate(size_intermediate);
+  #endif
+  int idof = 0;
   move_boris move_boris0(
       particleArray, dt, boundaries.data(), nLines, nR_Bfield, nZ_Bfield,
       bfieldGridr.data(), &bfieldGridz.front(), &br.front(), &bz.front(),
@@ -3667,7 +3681,7 @@ std::cout << "GEOM_HASH 1 \n";
       nR_closeGeom_sheath, nY_closeGeom_sheath, nZ_closeGeom_sheath,
       n_closeGeomElements_sheath, &closeGeomGridr_sheath.front(),
       &closeGeomGridy_sheath.front(), &closeGeomGridz_sheath.front(),
-      &closeGeom_sheath.front());
+      &closeGeom_sheath.front(),  &intermediate.front(), nT, idof, dof_intermediate);
   geometry_check geometry_check0(
       particleArray, nLines, &boundaries[0], surfaces, dt, nHashes,
       nR_closeGeom.data(), nY_closeGeom.data(), nZ_closeGeom.data(),
@@ -3685,20 +3699,22 @@ std::cout << "GEOM_HASH 1 \n";
                      &gridZ_bins.front(), &net_Bins.front(), dt);
 #endif
 #if USEIONIZATION > 0
+  idof = 6;
   ionize ionize0(
       particleArray, dt, &state1.front(), nR_Dens, nZ_Dens, &DensGridr.front(),
       &DensGridz.front(), &ne.front(), nR_Temp, nZ_Temp, &TempGridr.front(),
       &TempGridz.front(), &te.front(), nTemperaturesIonize, nDensitiesIonize,
       &gridTemperature_Ionization.front(), &gridDensity_Ionization.front(),
-      &rateCoeff_Ionization.front());
+      &rateCoeff_Ionization.front(), &intermediate.front(), nT, idof, dof_intermediate);
 #endif
 #if USERECOMBINATION > 0
+  idof = 8;
   recombine recombine0(
       particleArray, dt, &state1.front(), nR_Dens, nZ_Dens, &DensGridr.front(),
       &DensGridz.front(), &ne.front(), nR_Temp, nZ_Temp, &TempGridr.front(),
       &TempGridz.front(), &te.front(), nTemperaturesRecombine,
       nDensitiesRecombine, gridTemperature_Recombination.data(),
-      gridDensity_Recombination.data(), rateCoeff_Recombination.data());
+      gridDensity_Recombination.data(), rateCoeff_Recombination.data(), &intermediate.front(), nT, idof, dof_intermediate);
 #endif
 #if USEPERPDIFFUSION > 0
   crossFieldDiffusion crossFieldDiffusion0(
@@ -4065,6 +4081,37 @@ std::cout << "GEOM_HASH 1 \n";
   std::chrono::duration<float> fs = finish_clock - start_clock;
   printf("Time taken          is %6.3f (secs) \n", fs.count());
   printf("Time taken per step is %6.3f (secs) \n", fs.count() / (float)nT);
+
+    if(world_rank == 0 && writeIntermediate) {
+      netCDF::NcFile ncFile_hist("output/intermediate.nc", NcFile::replace);
+      netCDF::NcDim ncdim_np = ncFile_hist.addDim("nP", nP);
+      netCDF::NcDim ncdim_nthist = ncFile_hist.addDim("nTHist", nHistoriesPerParticle);
+      netCDF::NcDim ncdim_ntrun = ncFile_hist.addDim("nTRun", nT);
+      netCDF::NcDim ncdim_dof = ncFile_hist.addDim("dof", dof_intermediate);
+      
+      netCDF::NcDim ncdim_efield = ncFile_hist.addDim("Efield", 3);
+      netCDF::NcDim ncdim_pos = ncFile_hist.addDim("position", 3);
+      netCDF::NcDim ncdim_rndioni = ncFile_hist.addDim("RndIoni", 1);
+      netCDF::NcDim ncdim_ioniRate = ncFile_hist.addDim("IoniRate", 1);
+      netCDF::NcDim ncdim_rndrecomb = ncFile_hist.addDim("RndRecomb", 1);
+      netCDF::NcDim ncdim_recRate = ncFile_hist.addDim("RecombRate", 1);
+      netCDF::NcDim ncdim_charge = ncFile_hist.addDim("charge", 1);
+      netCDF::NcDim ncdim_efield_at = ncFile_hist.addDim("Efield_at", 0);
+      netCDF::NcDim ncdim_pos_At = ncFile_hist.addDim("position_at", 3);
+      netCDF::NcDim ncdim_rndioni_at = ncFile_hist.addDim("RndIoni_at", 6);
+      netCDF::NcDim ncdim_ionirate_at = ncFile_hist.addDim("IoniRate_at", 7);
+      netCDF::NcDim ncdim_rndrecomb_at = ncFile_hist.addDim("RndRecomb_at", 8);
+      netCDF::NcDim ncdim_recRate_at = ncFile_hist.addDim("RecombRate_at", 9);
+      netCDF::NcDim ncdim_charge_at = ncFile_hist.addDim("charge_at", 10);
+      vector<NcDim>dims_intermediate;
+      dims_intermediate.push_back(ncdim_np);
+      dims_intermediate.push_back(ncdim_dof);
+      dims_intermediate.push_back(ncdim_nthist);
+      netCDF::NcVar ncvar_data = ncFile_hist.addVar("intermediate", ncDouble, dims_intermediate);
+      ncvar_data.putVar(&intermediate[0]);
+      //printf("charge at 2016 %d\n", intermediate[9242]);
+    }
+
   // for(int i=0; i<nP;i++)
   //{
   //    std::cout << "Particle test value r1: " << i << " " <<
@@ -4409,7 +4456,7 @@ std::cout << "bound 255 " << boundaries[255].impacts << std::endl;
                nR_closeGeom_sheath, nY_closeGeom_sheath, nZ_closeGeom_sheath,
                n_closeGeomElements_sheath, &closeGeomGridr_sheath.front(),
                &closeGeomGridy_sheath.front(), &closeGeomGridz_sheath.front(),
-               &closeGeom_sheath.front(), closestBoundaryIndex);
+               &closeGeom_sheath.front(), closestBoundaryIndex, -1);
       // std::cout << "Starting surf minDistance and closestBoundaryIndex " <<
       // closestBoundaryIndex << " " <<
       //    minDistance << std::endl;

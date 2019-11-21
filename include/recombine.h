@@ -42,7 +42,13 @@ struct recombine {
   float* rateCoeff_Recombination;
   const float dt;
   float tion;
-  //int& tt;
+
+  int dof_intermediate;
+  int idof;
+  int nT;
+  double* intermediate;
+
+//int& tt;
 #if __CUDACC__
       curandState *state;
 #else
@@ -59,7 +65,7 @@ struct recombine {
      float* _DensGridz,float* _ne,int _nR_Temp, int _nZ_Temp,
      float* _TempGridr, float* _TempGridz,float* _te,int _nTemperaturesRecomb,
      int _nDensitiesRecomb,float* _gridTemperature_Recombination,float* _gridDensity_Recombination,
-     float* _rateCoeff_Recombination) : 
+     float* _rateCoeff_Recombination,  double* intermediate, int nT, int idof, int dof_intermediate): 
     particlesPointer(_particlesPointer),
 
                                                nR_Dens(_nR_Dens),
@@ -78,7 +84,7 @@ struct recombine {
                                                gridTemperature_Recombination(_gridTemperature_Recombination),
                                                rateCoeff_Recombination(_rateCoeff_Recombination),
                                                dt(_dt), // JDL missing tion?
-                                               state(_state) {
+                                               state(_state), intermediate(intermediate),nT(nT),idof(idof), dof_intermediate(dof_intermediate) {
   }
  
   
@@ -110,8 +116,21 @@ struct recombine {
             std::uniform_real_distribution<float> dist(0.0, 1.0);
     float r1=dist(state[1]);
     #endif
-#endif   
+#endif  
 
+        if(dof_intermediate > 0) {
+           int nthStep = particlesPointer->tt[indx];
+           auto pindex = particlesPointer->index[indx];
+           auto beg = pindex*nT*dof_intermediate + (nthStep-1)*dof_intermediate;
+           intermediate[beg+idof] = r1;
+           intermediate[beg+idof+1] = tion;
+
+        auto xx=particlesPointer->x[indx];
+        auto yy=particlesPointer->y[indx];
+        auto zz=particlesPointer->z[indx];
+        //if(false)
+           printf("recomb: ptcl %d rate %g recrand %g pos %g %g %g \n", pindex, tion, r1, xx, yy, zz);
+        }
 	if(r1 <= P1)
 	{
         particlesPointer->charge[indx] = particlesPointer->charge[indx]-1;
