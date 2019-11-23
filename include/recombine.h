@@ -20,7 +20,9 @@ using namespace std;
 #include <random>
 #include <stdlib.h>
 #endif
-
+#ifndef COMPARE_GITR
+#define COMPARE_GITR 0
+#endif
 #include "interpRateCoeff.hpp"
 
 struct recombine { 
@@ -128,7 +130,7 @@ struct recombine {
         auto xx=particlesPointer->x[indx];
         auto yy=particlesPointer->y[indx];
         auto zz=particlesPointer->z[indx];
-        //if(false)
+        if(COMPARE_GITR)
            printf("recomb: ptcl %d rate %g recrand %g pos %g %g %g \n", pindex, tion, r1, xx, yy, zz);
         }
 	if(r1 <= P1)

@@ -63,6 +63,9 @@
 #include <thrust/sort.h>
 #include <thrust/transform.h>
 
+#define COMPARE_GITR 0 
+
+
 int main(int argc, char **argv, char **envp) {
   typedef std::chrono::high_resolution_clock gitr_time;
   auto gitr_start_clock = gitr_time::now();

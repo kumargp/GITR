@@ -12,6 +12,9 @@
 #endif
 
 #include <cmath>
+#ifndef COMPARE_GITR
+#define COMPARE_GITR 0
+#endif
 
 CUDA_CALLABLE_MEMBER
 
@@ -110,7 +113,7 @@ float interp2dCombined ( float x, float y, float z,int nx, int nz,
       fx_z2 = ((gridx[i+1]-dim1)*data[i+(j+1)*nx] + (dim1 - gridx[i])*data[i+1+(j+1)*nx])/d_dim1; 
       fxz = ((gridz[j+1]-z)*fx_z1+(z - gridz[j])*fx_z2)/dz;
     }
-  //if(false)
+  if(COMPARE_GITR)
     printf(" interp2dCombined: x %g y %g z %g dim1 %g nx %d, nz %d grid0 %g gridz0 %g i %d j %d d_dim1 %g dz %g inter2d-fxz %g \n", 
       x,y,z, dim1, nx, nz, gridx[0], gridz[0], i, j, d_dim1, dz, fxz);    
     }

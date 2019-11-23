@@ -17,7 +17,9 @@ using namespace std;
 #include "interp2d.hpp"
 #include <algorithm>
 
-#define DEBUG_PRINT 1
+#ifndef COMPARE_GITR
+#define COMPARE_GITR 0
+#endif
 
 CUDA_CALLABLE_MEMBER
 void vectorAdd(float A[], float B[],float C[])
@@ -687,7 +689,7 @@ float getE ( float x0, float y, float z, float E[], Boundary *boundaryVector, in
 #if BIASED_SURFACE > 0
     pot = boundaryVector[minIndex].potential;
     Emag = pot/(2.0f*boundaryVector[minIndex].ChildLangmuirDist)*expf(-minDistance/(2.0f*boundaryVector[minIndex].ChildLangmuirDist));
- if(DEBUG_PRINT)   
+ if(COMPARE_GITR)   
 printf("calcE: ptcl %d pot %g CLD %g mindist %g Emag %g dirV %g %g %g\n", ptcl, pot, boundaryVector[minIndex].ChildLangmuirDist,
     minDistance, Emag, directionUnitVector[0], directionUnitVector[1] , directionUnitVector[2]);
 #else 
@@ -925,7 +927,7 @@ float operationsTime = 0.0f;
                intermediate[beg+idof+4] = position[1];
                intermediate[beg+idof+5] = position[2];
                intermediate[beg+idof+10] = qc;
-            if(DEBUG_PRINT)   
+            if(COMPARE_GITR)   
                printf("\nboris ptcl %d t %d charge %d @ %d E-boris %g %g %g minDist %g pos %g %g %g \n", 
                    pindex, nthStep-1, qc, beg, E[0],E[1],E[2], minDist, position[0], position[1], position[2]);
              }              
@@ -943,7 +945,7 @@ float operationsTime = 0.0f;
                 //cout << "velocity " << v[0] << " " << v[1] << " " << v[2] << endl;
                 //v_minus = v + q_prime*E;
 float v0[] = {v[0],v[1],v[2]};
-if(DEBUG_PRINT)
+if(COMPARE_GITR)
   printf("borisvel0  ptcl %d %g %g %g \n", particlesPointer->index[indx], v[0],v[1],v[2]); 
                 vectorScalarMult(q_prime,E,qpE);
                vectorAdd(v,qpE,v_minus);
@@ -999,7 +1001,7 @@ if(DEBUG_PRINT)
                 particlesPointer->vz[indx] = v[2];    
 float dv[] = {v[0] - v0[0], v[1]-v0[1], v[2]-v0[2]};
 
-if(DEBUG_PRINT) {
+if(COMPARE_GITR) {
   printf("borisUpdatedVel  ptcl %d %g %g %g :dv %g %g %g \n", particlesPointer->index[indx], v[0],v[1], v[2], dv[0], dv[1], dv[2]);              
   printf("borisUpdatedPos  ptcl %d %g %g %g \n", particlesPointer->index[indx], position[0] + v[0] * dt, position[1] + v[1] * dt, position[2] + v[2] * dt); 
 }

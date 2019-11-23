@@ -20,7 +20,9 @@
 #include <stdlib.h>
 using namespace std;
 #endif
-
+#ifndef COMPARE_GITR
+#define COMPARE_GITR 0
+#endif
 #include "interpRateCoeff.hpp"
 
 struct ionize { 
@@ -138,7 +140,7 @@ struct ionize {
         auto xx=particlesPointer->x[indx];
         auto yy=particlesPointer->y[indx];
         auto zz=particlesPointer->z[indx];
-        //if(false)
+        if(COMPARE_GITR)
           printf("ioni: ptcl %d rate %g ionirand %g P1 %g pos %g %g %g \n", pindex, tion, r1, P1, xx, yy, zz);
       }
       if(r1 <= P1)
